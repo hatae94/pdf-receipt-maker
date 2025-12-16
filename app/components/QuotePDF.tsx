@@ -154,7 +154,9 @@ export default function QuoteTemplate({ data }: QuoteTemplateProps) {
             <div style={{ flex: 1, padding: "4px 8px", position: "relative" }}>
               <div style={{ display: "inline" }}>
                 {data.supplier.representative}
-                <span style={{ marginLeft: "10px", fontSize: "10px" }}>(인)</span>
+                <span style={{ marginLeft: "10px", fontSize: "10px" }}>
+                  (인)
+                </span>
               </div>
               {data.stampImage && (
                 <div
@@ -163,8 +165,8 @@ export default function QuoteTemplate({ data }: QuoteTemplateProps) {
                     right: "8px",
                     top: "50%",
                     transform: "translateY(-50%)",
-                    width: "35px",
-                    height: "35px",
+                    width: "105px",
+                    height: "105px",
                   }}
                 >
                   <img
@@ -255,6 +257,9 @@ export default function QuoteTemplate({ data }: QuoteTemplateProps) {
               }}
             >
               담당자
+            </div>
+            <div style={{ flex: 1, padding: "4px 8px" }}>
+              {data.supplier.representative}
             </div>
             <div
               style={{
