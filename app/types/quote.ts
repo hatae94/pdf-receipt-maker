@@ -28,6 +28,7 @@ export interface QuoteData {
   invoiceNumber: string;       // 청구지번호
   date: string;                // 작성일
   type: 'receipt' | 'invoice'; // 영수/청구
+  projectName: string;         // 공사명
   recipient: RecipientInfo;    // 수신자 정보
   supplier: SupplierInfo;      // 공급자 정보
   items: QuoteItem[];          // 품목 목록

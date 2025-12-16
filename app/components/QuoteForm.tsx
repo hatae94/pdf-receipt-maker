@@ -1,61 +1,71 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { QuoteData, QuoteItem, SupplierInfo, RecipientInfo } from '../types/quote';
+import { useState } from "react";
+import {
+  QuoteData,
+  QuoteItem,
+  SupplierInfo,
+  RecipientInfo,
+} from "../types/quote";
 
 interface QuoteFormProps {
   onGeneratePDF: (data: QuoteData) => void;
 }
 
 export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
-  const [invoiceNumber, setInvoiceNumber] = useState('');
-  const [quoteType, setQuoteType] = useState<'receipt' | 'invoice'>('invoice');
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [quoteType, setQuoteType] = useState<"receipt" | "invoice">("invoice");
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [projectName, setProjectName] = useState("");
 
   // 수신자 정보
   const [recipient, setRecipient] = useState<RecipientInfo>({
-    companyName: '',
-    representative: ''
+    companyName: "",
+    representative: "",
   });
 
   // 공급자 정보
   const [supplier, setSupplier] = useState<SupplierInfo>({
-    registrationNumber: '',
-    companyName: '',
-    representative: '',
-    address: '',
-    businessType: '',
-    businessItem: '',
-    contact: ''
+    registrationNumber: "",
+    companyName: "",
+    representative: "",
+    address: "",
+    businessType: "",
+    businessItem: "",
+    contact: "",
   });
 
   // 품목 목록
   const [items, setItems] = useState<QuoteItem[]>([
     {
-      name: '',
-      spec: '',
+      name: "",
+      spec: "",
       quantity: 1,
-      unit: '',
+      unit: "",
       unitPrice: 0,
       supplyPrice: 0,
       tax: 0,
-      note: ''
-    }
+      note: "",
+    },
   ]);
 
-  const [stampImage, setStampImage] = useState<string>('');
+  const [stampImage, setStampImage] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleAddItem = () => {
-    setItems([...items, {
-      name: '',
-      spec: '',
-      quantity: 1,
-      unit: '',
-      unitPrice: 0,
-      supplyPrice: 0,
-      tax: 0,
-      note: ''
-    }]);
+    setItems([
+      ...items,
+      {
+        name: "",
+        spec: "",
+        quantity: 1,
+        unit: "",
+        unitPrice: 0,
+        supplyPrice: 0,
+        tax: 0,
+        note: "",
+      },
+    ]);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -64,18 +74,24 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
     }
   };
 
-  const handleItemChange = (index: number, field: keyof QuoteItem, value: string | number) => {
+  const handleItemChange = (
+    index: number,
+    field: keyof QuoteItem,
+    value: string | number
+  ) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
 
     // 자동 계산
-    if (field === 'unitPrice' || field === 'quantity') {
-      const quantity = typeof newItems[index].quantity === 'string'
-        ? parseFloat(newItems[index].quantity as any) || 0
-        : newItems[index].quantity;
-      const unitPrice = typeof newItems[index].unitPrice === 'string'
-        ? parseFloat(newItems[index].unitPrice as any) || 0
-        : newItems[index].unitPrice;
+    if (field === "unitPrice" || field === "quantity") {
+      const quantity =
+        typeof newItems[index].quantity === "string"
+          ? parseFloat(newItems[index].quantity as any) || 0
+          : newItems[index].quantity;
+      const unitPrice =
+        typeof newItems[index].unitPrice === "string"
+          ? parseFloat(newItems[index].unitPrice as any) || 0
+          : newItems[index].unitPrice;
 
       newItems[index].supplyPrice = quantity * unitPrice;
       newItems[index].tax = Math.round(newItems[index].supplyPrice * 0.1); // 10% 세액
@@ -96,12 +112,15 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
   };
 
   const calculateTotals = () => {
-    const totalSupplyPrice = items.reduce((sum, item) => sum + item.supplyPrice, 0);
+    const totalSupplyPrice = items.reduce(
+      (sum, item) => sum + item.supplyPrice,
+      0
+    );
     const totalTax = items.reduce((sum, item) => sum + item.tax, 0);
     return {
       totalSupplyPrice,
       totalTax,
-      totalAmount: totalSupplyPrice + totalTax
+      totalAmount: totalSupplyPrice + totalTax,
     };
   };
 
@@ -112,17 +131,18 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
     const totals = calculateTotals();
     const quoteData: QuoteData = {
       invoiceNumber,
-      date: new Date().toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+      date: new Date(date).toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       }),
       type: quoteType,
+      projectName,
       recipient,
       supplier,
       items,
       ...totals,
-      stampImage: stampImage || undefined
+      stampImage: stampImage || undefined,
     };
 
     try {
@@ -135,15 +155,20 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
   const totals = calculateTotals();
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-6xl mx-auto space-y-6 p-4 sm:p-6">
+    <form
+      onSubmit={handleSubmit}
+      className="w-full max-w-6xl mx-auto space-y-6 p-4 sm:p-6"
+    >
       {/* 기본 정보 */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow space-y-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b pb-2">기본 정보</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b pb-2">
+          기본 정보
+        </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              청구지번호
+              사업자번호
             </label>
             <input
               type="text"
@@ -156,6 +181,19 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              작성일 *
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               구분 *
             </label>
             <div className="flex gap-4">
@@ -163,30 +201,50 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
                 <input
                   type="radio"
                   value="receipt"
-                  checked={quoteType === 'receipt'}
-                  onChange={(e) => setQuoteType(e.target.value as 'receipt')}
+                  checked={quoteType === "receipt"}
+                  onChange={(e) => setQuoteType(e.target.value as "receipt")}
                   className="mr-2"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">영수</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  영수
+                </span>
               </label>
               <label className="flex items-center">
                 <input
                   type="radio"
                   value="invoice"
-                  checked={quoteType === 'invoice'}
-                  onChange={(e) => setQuoteType(e.target.value as 'invoice')}
+                  checked={quoteType === "invoice"}
+                  onChange={(e) => setQuoteType(e.target.value as "invoice")}
                   className="mr-2"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">청구</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  청구
+                </span>
               </label>
             </div>
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              공사명 *
+            </label>
+            <input
+              type="text"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              placeholder="공사명을 입력하세요"
+              required
+            />
           </div>
         </div>
       </div>
 
       {/* 수신자 정보 */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow space-y-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b pb-2">수신자 정보</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b pb-2">
+          수신자 정보
+        </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -196,7 +254,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
             <input
               type="text"
               value={recipient.companyName}
-              onChange={(e) => setRecipient({ ...recipient, companyName: e.target.value })}
+              onChange={(e) =>
+                setRecipient({ ...recipient, companyName: e.target.value })
+              }
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="받는 회사명"
@@ -210,7 +270,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
             <input
               type="text"
               value={recipient.representative}
-              onChange={(e) => setRecipient({ ...recipient, representative: e.target.value })}
+              onChange={(e) =>
+                setRecipient({ ...recipient, representative: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="대표자명"
             />
@@ -220,7 +282,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
 
       {/* 공급자 정보 */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow space-y-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b pb-2">공급자 정보</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b pb-2">
+          공급자 정보
+        </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
@@ -230,7 +294,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
             <input
               type="text"
               value={supplier.registrationNumber}
-              onChange={(e) => setSupplier({ ...supplier, registrationNumber: e.target.value })}
+              onChange={(e) =>
+                setSupplier({ ...supplier, registrationNumber: e.target.value })
+              }
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="사업자등록번호"
@@ -244,7 +310,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
             <input
               type="text"
               value={supplier.companyName}
-              onChange={(e) => setSupplier({ ...supplier, companyName: e.target.value })}
+              onChange={(e) =>
+                setSupplier({ ...supplier, companyName: e.target.value })
+              }
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="공급자 상호"
@@ -258,7 +326,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
             <input
               type="text"
               value={supplier.representative}
-              onChange={(e) => setSupplier({ ...supplier, representative: e.target.value })}
+              onChange={(e) =>
+                setSupplier({ ...supplier, representative: e.target.value })
+              }
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="대표자명"
@@ -272,7 +342,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
             <input
               type="text"
               value={supplier.address}
-              onChange={(e) => setSupplier({ ...supplier, address: e.target.value })}
+              onChange={(e) =>
+                setSupplier({ ...supplier, address: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="사업장 주소"
             />
@@ -285,7 +357,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
             <input
               type="text"
               value={supplier.businessType}
-              onChange={(e) => setSupplier({ ...supplier, businessType: e.target.value })}
+              onChange={(e) =>
+                setSupplier({ ...supplier, businessType: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="예: 서비스업"
             />
@@ -298,7 +372,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
             <input
               type="text"
               value={supplier.businessItem}
-              onChange={(e) => setSupplier({ ...supplier, businessItem: e.target.value })}
+              onChange={(e) =>
+                setSupplier({ ...supplier, businessItem: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="예: IT개발"
             />
@@ -311,7 +387,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
             <input
               type="text"
               value={supplier.contact}
-              onChange={(e) => setSupplier({ ...supplier, contact: e.target.value })}
+              onChange={(e) =>
+                setSupplier({ ...supplier, contact: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               placeholder="전화번호"
             />
@@ -322,7 +400,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
       {/* 품목 목록 */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow space-y-4">
         <div className="flex justify-between items-center border-b pb-2">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">품목 내역</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            품목 내역
+          </h2>
           <button
             type="button"
             onClick={handleAddItem}
@@ -361,7 +441,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
                   <input
                     type="text"
                     value={item.name}
-                    onChange={(e) => handleItemChange(index, 'name', e.target.value)}
+                    onChange={(e) =>
+                      handleItemChange(index, "name", e.target.value)
+                    }
                     required
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     placeholder="품목명"
@@ -375,7 +457,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
                   <input
                     type="text"
                     value={item.spec}
-                    onChange={(e) => handleItemChange(index, 'spec', e.target.value)}
+                    onChange={(e) =>
+                      handleItemChange(index, "spec", e.target.value)
+                    }
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     placeholder="규격"
                   />
@@ -387,8 +471,14 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
                   </label>
                   <input
                     type="number"
-                    value={item.quantity || ''}
-                    onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
+                    value={item.quantity || ""}
+                    onChange={(e) =>
+                      handleItemChange(
+                        index,
+                        "quantity",
+                        Number(e.target.value)
+                      )
+                    }
                     required
                     min="0"
                     step="0.01"
@@ -404,7 +494,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
                   <input
                     type="text"
                     value={item.unit}
-                    onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
+                    onChange={(e) =>
+                      handleItemChange(index, "unit", e.target.value)
+                    }
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     placeholder="개, 식"
                   />
@@ -416,8 +508,14 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
                   </label>
                   <input
                     type="number"
-                    value={item.unitPrice || ''}
-                    onChange={(e) => handleItemChange(index, 'unitPrice', Number(e.target.value))}
+                    value={item.unitPrice || ""}
+                    onChange={(e) =>
+                      handleItemChange(
+                        index,
+                        "unitPrice",
+                        Number(e.target.value)
+                      )
+                    }
                     required
                     min="0"
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
@@ -444,7 +542,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
                   <input
                     type="text"
                     value={item.note}
-                    onChange={(e) => handleItemChange(index, 'note', e.target.value)}
+                    onChange={(e) =>
+                      handleItemChange(index, "note", e.target.value)
+                    }
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     placeholder="비고"
                   />
@@ -459,19 +559,25 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
       <div className="bg-blue-50 dark:bg-blue-900 p-6 rounded-lg shadow">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">공급가액</div>
+            <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+              공급가액
+            </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {totals.totalSupplyPrice.toLocaleString()}원
             </div>
           </div>
           <div>
-            <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">세액 (10%)</div>
+            <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+              세액 (10%)
+            </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {totals.totalTax.toLocaleString()}원
             </div>
           </div>
           <div>
-            <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">합계금액</div>
+            <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+              합계금액
+            </div>
             <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
               {totals.totalAmount.toLocaleString()}원
             </div>
@@ -481,7 +587,9 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
 
       {/* 도장 이미지 */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow space-y-4">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b pb-2">도장 이미지 (선택)</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b pb-2">
+          도장 이미지 (선택)
+        </h2>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <input
@@ -507,10 +615,17 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
       <div className="pt-4">
         <button
           type="submit"
-          disabled={isGenerating || !recipient.companyName || !supplier.registrationNumber || !supplier.companyName || !supplier.representative || items.some(item => !item.name || item.unitPrice <= 0)}
+          disabled={
+            isGenerating ||
+            !recipient.companyName ||
+            !supplier.registrationNumber ||
+            !supplier.companyName ||
+            !supplier.representative ||
+            items.some((item) => !item.name || item.unitPrice <= 0)
+          }
           className="w-full px-6 py-4 text-lg font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
-          {isGenerating ? 'PDF 생성 중...' : 'PDF 견적서 생성'}
+          {isGenerating ? "PDF 생성 중..." : "PDF 견적서 생성"}
         </button>
       </div>
     </form>
