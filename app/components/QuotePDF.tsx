@@ -162,7 +162,7 @@ export default function QuoteTemplate({ data }: QuoteTemplateProps) {
                 <div
                   style={{
                     position: "absolute",
-                    right: "8px",
+                    right: "-30px",
                     top: "50%",
                     transform: "translateY(-50%)",
                     width: "105px",
