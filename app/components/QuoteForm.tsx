@@ -1,31 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   QuoteData,
   QuoteItem,
   SupplierInfo,
   RecipientInfo,
+  SavedQuote,
+  QuoteFormData,
 } from "../types/quote";
+import {
+  getSavedQuotes,
+  saveQuote,
+  deleteQuote,
+  formatSavedDate,
+} from "../utils/quoteStorage";
 
 interface QuoteFormProps {
   onGeneratePDF: (data: QuoteData) => void;
 }
 
-export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
-  const [invoiceNumber, setInvoiceNumber] = useState("");
-  const [quoteType, setQuoteType] = useState<"receipt" | "invoice">("invoice");
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [projectName, setProjectName] = useState("");
-
-  // 수신자 정보
-  const [recipient, setRecipient] = useState<RecipientInfo>({
+// 초기 폼 데이터
+const getInitialFormData = (): {
+  invoiceNumber: string;
+  quoteType: 'receipt' | 'invoice';
+  date: string;
+  projectName: string;
+  recipient: RecipientInfo;
+  supplier: SupplierInfo;
+  items: QuoteItem[];
+  stampImage: string;
+} => ({
+  invoiceNumber: "",
+  quoteType: "invoice",
+  date: new Date().toISOString().split('T')[0],
+  projectName: "",
+  recipient: {
     companyName: "",
     representative: "",
-  });
-
-  // 공급자 정보
-  const [supplier, setSupplier] = useState<SupplierInfo>({
+  },
+  supplier: {
     registrationNumber: "",
     companyName: "",
     representative: "",
@@ -33,10 +47,8 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
     businessType: "",
     businessItem: "",
     contact: "",
-  });
-
-  // 품목 목록
-  const [items, setItems] = useState<QuoteItem[]>([
+  },
+  items: [
     {
       name: "",
       spec: "",
@@ -47,10 +59,89 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
       tax: 0,
       note: "",
     },
-  ]);
+  ],
+  stampImage: "",
+});
 
-  const [stampImage, setStampImage] = useState<string>("");
+export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
+  const initialData = getInitialFormData();
+
+  const [invoiceNumber, setInvoiceNumber] = useState(initialData.invoiceNumber);
+  const [quoteType, setQuoteType] = useState<"receipt" | "invoice">(initialData.quoteType);
+  const [date, setDate] = useState(initialData.date);
+  const [projectName, setProjectName] = useState(initialData.projectName);
+
+  // 수신자 정보
+  const [recipient, setRecipient] = useState<RecipientInfo>(initialData.recipient);
+
+  // 공급자 정보
+  const [supplier, setSupplier] = useState<SupplierInfo>(initialData.supplier);
+
+  // 품목 목록
+  const [items, setItems] = useState<QuoteItem[]>(initialData.items);
+
+  const [stampImage, setStampImage] = useState<string>(initialData.stampImage);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // 저장된 견적서 목록
+  const [savedQuotes, setSavedQuotes] = useState<SavedQuote[]>([]);
+  const [showSavedQuotes, setShowSavedQuotes] = useState(false);
+
+  // 저장된 견적서 목록 로드
+  useEffect(() => {
+    setSavedQuotes(getSavedQuotes());
+  }, []);
+
+  // 폼 초기화
+  const handleReset = () => {
+    if (!confirm('모든 입력 내용을 초기화하시겠습니까?')) return;
+
+    const initial = getInitialFormData();
+    setInvoiceNumber(initial.invoiceNumber);
+    setQuoteType(initial.quoteType);
+    setDate(initial.date);
+    setProjectName(initial.projectName);
+    setRecipient(initial.recipient);
+    setSupplier(initial.supplier);
+    setItems(initial.items);
+    setStampImage(initial.stampImage);
+  };
+
+  // 견적서 불러오기
+  const handleLoadQuote = (quote: SavedQuote) => {
+    const formData = quote.formData;
+    setInvoiceNumber(formData.invoiceNumber);
+    setQuoteType(formData.quoteType);
+    setDate(formData.date);
+    setProjectName(formData.projectName);
+    setRecipient(formData.recipient);
+    setSupplier(formData.supplier);
+    setItems(formData.items);
+    setStampImage(formData.stampImage || "");
+    setShowSavedQuotes(false);
+  };
+
+  // 견적서 삭제
+  const handleDeleteQuote = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('이 견적서를 삭제하시겠습니까?')) return;
+
+    if (deleteQuote(id)) {
+      setSavedQuotes(getSavedQuotes());
+    }
+  };
+
+  // 현재 폼 데이터를 QuoteFormData로 변환
+  const getCurrentFormData = (): QuoteFormData => ({
+    invoiceNumber,
+    quoteType,
+    date,
+    projectName,
+    recipient,
+    supplier,
+    items,
+    stampImage: stampImage || undefined,
+  });
 
   const handleAddItem = () => {
     setItems([
@@ -147,6 +238,14 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
 
     try {
       await onGeneratePDF(quoteData);
+
+      // PDF 생성 성공 시 localStorage에 자동 저장
+      try {
+        saveQuote(getCurrentFormData());
+        setSavedQuotes(getSavedQuotes());
+      } catch (error) {
+        console.error('Failed to save quote to localStorage:', error);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -159,6 +258,71 @@ export default function QuoteForm({ onGeneratePDF }: QuoteFormProps) {
       onSubmit={handleSubmit}
       className="w-full max-w-6xl mx-auto space-y-6 p-4 sm:p-6"
     >
+      {/* 저장된 견적서 관리 */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            저장된 견적서
+          </h2>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowSavedQuotes(!showSavedQuotes)}
+              className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            >
+              {showSavedQuotes ? '목록 닫기' : `불러오기 (${savedQuotes.length})`}
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="px-4 py-2 text-sm font-medium text-white bg-gray-500 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            >
+              초기화
+            </button>
+          </div>
+        </div>
+
+        {/* 저장된 견적서 목록 */}
+        {showSavedQuotes && (
+          <div className="border-t pt-4 dark:border-gray-700">
+            {savedQuotes.length === 0 ? (
+              <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                저장된 견적서가 없습니다. PDF를 생성하면 자동으로 저장됩니다.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {savedQuotes
+                  .slice()
+                  .sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime())
+                  .map((quote) => (
+                    <div
+                      key={quote.id}
+                      onClick={() => handleLoadQuote(quote)}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 dark:text-white truncate">
+                          {quote.name}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {formatSavedDate(quote.savedAt)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteQuote(quote.id, e)}
+                        className="ml-3 px-3 py-1 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* 기본 정보 */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow space-y-4">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b pb-2">

@@ -37,3 +37,23 @@ export interface QuoteData {
   totalAmount: number;         // 합계금액
   stampImage?: string;         // 도장 이미지
 }
+
+// 폼 데이터 저장용 인터페이스 (localStorage 저장 시 사용)
+export interface QuoteFormData {
+  invoiceNumber: string;
+  quoteType: 'receipt' | 'invoice';
+  date: string;
+  projectName: string;
+  recipient: RecipientInfo;
+  supplier: SupplierInfo;
+  items: QuoteItem[];
+  stampImage?: string;
+}
+
+// 저장된 견적서 인터페이스
+export interface SavedQuote {
+  id: string;                  // 고유 ID
+  name: string;                // 견적서 이름 (수신 회사명 + 공사명)
+  formData: QuoteFormData;     // 폼 데이터
+  savedAt: string;             // 저장 시간 (ISO string)
+}
