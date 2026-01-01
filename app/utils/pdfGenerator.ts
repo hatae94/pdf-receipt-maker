@@ -1,7 +1,7 @@
 export async function generatePDF(
   elementId: string,
   filename: string
-): Promise<void> {
+): Promise<string> {
   // Dynamic imports to avoid SSR issues
   const html2canvas = (await import("html2canvas")).default;
   const { jsPDF } = await import("jspdf");
@@ -42,6 +42,11 @@ export async function generatePDF(
     heightLeft -= pageHeight;
   }
 
-  // Save the PDF
+  // Save the PDF and open in new tab for preview
   pdf.save(filename);
+
+  // Return blob URL for preview in new tab
+  const pdfBlob = pdf.output("blob");
+  const blobUrl = URL.createObjectURL(pdfBlob);
+  return blobUrl;
 }

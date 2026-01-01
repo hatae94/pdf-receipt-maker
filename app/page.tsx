@@ -18,7 +18,10 @@ export default function Home() {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
-      await generatePDF('quote-template', `견적서_${data.recipient.companyName}_${data.date}.pdf`);
+      const pdfUrl = await generatePDF('quote-template', `견적서_${data.recipient.companyName}_${data.date}.pdf`);
+
+      // Open PDF in new tab for preview
+      window.open(pdfUrl, '_blank');
 
       // Reset preview after successful generation
       setTimeout(() => {
